@@ -49,18 +49,22 @@ runs:
         PACKAGES=$(cat deps.txt)
         dnf install \
           --disablerepo='*' \
-          --enablerepo='fedora,updates' \
+          --enablerepo='baseos,appstream,extras' \
           --setopt install_weak_deps=0 \
           --assumeyes \
           $PACKAGES
         
-    - name: Download Fedora Everything Installer
+    - name: Download Alma Linux Boot Installer
       shell: bash
       working-directory: ${{ github.action_path }}
+      id: iso
       run: |
-        aria2c $EVERYTHING_INSTALLER_URL -o Fedora-Everything-netinst-${{ inputs.cpu-arch }}.iso
+        wget $ISO_INSTALLER_URL -O $ISO_INSTALLER
+        echo ISO_INSTALLER=$ISO_INSTALLER >> $GITHUB_OUTPUT
       env:
-        EVERYTHING_INSTALLER_URL: https://na.edge.kernel.org/fedora/${{ inputs.installer-repo }}/${{ inputs.installer-major-version }}/Everything/${{ inputs.cpu-arch }}/os/images/boot.iso
+        ISO_INSTALLER_URL: https://repo.almalinux.org/almalinux/9.3/isos/x86_64/AlmaLinux-9.3-x86_64-boot.iso
+        ISO_INSTALLER: AlmaLinux-${{ inputs.installer-major-version }}-${{ inputs.cpu-arch }}.iso
+        #EVERYTHING_INSTALLER_URL: https://repo.almalinux.org/almalinux/${{ inputs.installer-major-version }}/isos/${{ inputs.cpu-arch }}/AlmaLinux-${{ inputs.installer-major-version }}-${{ inputs.cpu-arch }}.iso
         
     - name: Build ISO
       shell: bash
@@ -71,7 +75,7 @@ runs:
         GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
         REPO: ${{ inputs.installer-repo }}
       run: |
-        ./isopatch.sh Fedora-Everything-netinst-${{ inputs.cpu-arch }}.iso ${{ steps.iso-name.outputs.iso_name }}
+        ./isopatch.sh ${{ steps.iso.outputs.ISO_INSTALLER }} ${{ steps.iso-name.outputs.iso_name }}
         echo "ISO_FILENAME=${{ steps.iso-name.outputs.iso_name }}" >> $GITHUB_OUTPUT
         
     - name: Calculate SHA256 
